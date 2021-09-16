@@ -29,6 +29,19 @@ Map::Map():mnMaxKFid(0),mnBigChangeIdx(0)
 {
 }
 
+void Map::GetMapPointsIdx()
+  {
+          unique_lock<mutex> lock(mMutexMap);
+          unsigned long int i = 0;
+          for ( auto mp: mspMapPoints )
+          {
+                  mmpnMapPointsIdx[mp] = i;
+                  i += 1;
+          }
+  }
+
+
+
 void Map::AddKeyFrame(KeyFrame *pKF)
 {
     unique_lock<mutex> lock(mMutexMap);

@@ -111,7 +111,8 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
     mpLoopCloser->SetTracker(mpTracker);
     mpLoopCloser->SetLocalMapper(mpLocalMapper);
-}
+} 
+ 
 
 cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp)
 {
@@ -470,6 +471,248 @@ void System::SaveTrajectoryKITTI(const string &filename)
     f.close();
     cout << endl << "trajectory saved!" << endl;
 }
+
+void System::SaveMapPointState(const string &filename)  
+{  
+   cout << endl << "Saving MapPoint State to " << filename << " ..." << endl;
+
+   vector<MapPoint* > mspMPs = mpMap->GetAllMapPoints();
+
+   ofstream f;
+   f.open(filename.c_str());
+   f << fixed;
+
+   for(size_t i=0; i<mspMPs.size(); i++)
+   {
+	MapPoint* mpMP = mspMPs[i];
+
+	if(mpMP->isBad())
+            continue;
+	
+	cv::Mat mWorldPos = mpMP->GetWorldPos();
+	f << mpMP->mnId <<" "<<mWorldPos.at<float>(0) <<" "<< mWorldPos.at<float>(1) <<" "<< mWorldPos.at<float>(2)<<endl;
+   }
+
+   f.close();
+
+   cout << endl << "MapPoint State saved!" << endl;  
+}  
+
+void System::SaveKeyFrameState(const string &filename)  
+{  
+   cout << endl << "Saving KeyFrame State to " << filename << " ..." << endl;
+
+   vector<KeyFrame*> vpKFs = mpMap->GetAllKeyFrames();
+   sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
+
+   ofstream f;
+   f.open(filename.c_str());
+   f << fixed;
+
+    for(size_t i=0; i<vpKFs.size(); i++)
+    {
+        KeyFrame* pKF = vpKFs[i];
+
+        if(pKF->isBad())
+            continue;
+
+	cv::Mat R = pKF->GetRotation().t();
+	vector<float> q = Converter::toQuaternion(R);
+
+        cv::Mat t = pKF->GetCameraCenter();
+        f <<pKF->mnId <<" "<<setprecision(6) <<pKF->mTimeStamp <<setprecision(7)<<" "<< t.at<float>(0) <<" "<< t.at<float>(1) <<" "<< t.at<float>(2)<<" "<< q[0] <<" "<< q[1] <<" "<<q[2]<<" "<<q[3]<<endl;
+
+    }
+
+   f.close();
+
+   cout << endl << "KeyFrame State saved!" << endl;  
+}  
+
+void System::SaveMapPointtoKeyFrame(const string &filename)  
+{ 
+   cout << endl << "Saving MapPoints to KeyFrame to " << filename << " ..." << endl;
+
+   vector<MapPoint* > mspMPs = mpMap->GetAllMapPoints();
+
+   ofstream f;
+   f.open(filename.c_str());
+   f << fixed;
+
+   for(size_t i=0; i<mspMPs.size(); i++)
+   {
+	MapPoint* mpMP = mspMPs[i];
+
+	if(mpMP->isBad())
+            continue;
+	
+	cv::Mat mWorldPos = mpMP->GetWorldPos();
+	//f << mpMP->mnId <<" "<<mWorldPos.at<float>(0) <<" "<< mWorldPos.at<float>(1) <<" "<< mWorldPos.at<float>(2)<<endl;
+
+	std::map<KeyFrame*,size_t> obKFs=mpMP->GetObservations();
+	f <<mpMP->mnId; 
+
+	for(map<KeyFrame*,size_t>::iterator mit=obKFs.begin(), mend=obKFs.end(); mit!=mend; mit++)
+    	{
+           KeyFrame* obKF = mit->first;
+           f <<" "<<setprecision(6)<< obKF->mnId;
+    	}
+	f<<endl;
+
+   }
+
+   f.close();
+
+   cout << endl << "MapPoints to KeyFrame saved!" << endl; 
+}
+
+void System::SaveKeyFrametoMapPoint(const string &filename)  
+{ 
+   cout << endl << "Saving KeyFrame to MapPoints to " << filename << " ..." << endl;
+
+   vector<KeyFrame*> vpKFs = mpMap->GetAllKeyFrames();
+   sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
+
+   ofstream f;
+   f.open(filename.c_str());
+   f << fixed;
+
+    for(size_t i=0; i<vpKFs.size(); i++)
+    {
+        KeyFrame* pKF = vpKFs[i];
+
+        if(pKF->isBad())
+            continue;
+
+	f << pKF->mnId; 
+
+	vector<MapPoint*> vpMP;
+        vpMP = pKF->GetMapPointMatches();
+
+	for(vector<MapPoint*>::iterator vit=vpMP.begin(), vend=vpMP.end(); vit!=vend; vit++)
+    	{	
+           MapPoint* pMP = *vit;
+
+	   if(!pMP)
+               continue;
+
+           if(pMP->isBad())
+               continue;
+		
+	   f <<" "<< pMP->mnId;
+    	}
+	f<<endl;
+   }
+   f.close();
+   cout << endl << "KeyFrame to MapPoints saved!" << endl; 
+}
+
+void System::SaveKeyFrameConnection(const string &filename) 
+{
+    cout << endl << "Saving KeyFrame Connection to " << filename << " ..." << endl;
+
+   vector<KeyFrame*> vpKFs = mpMap->GetAllKeyFrames();
+   sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
+
+   ofstream f;
+   f.open(filename.c_str());
+   f << fixed;
+
+    for(size_t i=0; i<vpKFs.size(); i++)
+    {
+        KeyFrame* pKF = vpKFs[i];
+
+        if(pKF->isBad())
+            continue;
+
+	cv::Mat R = pKF->GetRotation().t();
+        cv::Mat t = pKF->GetCameraCenter();
+        f <<pKF->mnId;
+
+	for ( auto cKF: pKF->GetConnectedKeyFrames())
+        {
+             int weight = pKF->GetWeight(cKF);
+             f <<" "<<cKF->mnId<<" "<<weight;
+        }
+	f<<endl;
+    }
+
+   f.close();
+
+   cout << endl << "KeyFrame Connection saved!" << endl;  
+}
+
+
+void System::SaveKeyFrameCovisibility(const string &filename) 
+{
+    cout << endl << "Saving KeyFrame Covisibility to " << filename << " ..." << endl;
+
+   vector<KeyFrame*> vpKFs = mpMap->GetAllKeyFrames();
+   sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
+
+   ofstream f;
+   f.open(filename.c_str());
+   f << fixed;
+
+    for(size_t i=0; i<vpKFs.size(); i++)
+    {
+        KeyFrame* pKF = vpKFs[i];
+
+        if(pKF->isBad())
+            continue;
+
+	cv::Mat R = pKF->GetRotation().t();
+        cv::Mat t = pKF->GetCameraCenter();
+        f <<pKF->mnId;
+
+	std::vector<KeyFrame* > ConKFs=pKF->GetVectorCovisibleKeyFrames();
+	for(size_t j=0; j<ConKFs.size(); j++)
+	{
+	   KeyFrame* cKF = ConKFs[j];
+	   f <<" "<<cKF->mnId;
+	}
+	f<<endl;
+
+    }
+
+   f.close();
+
+   cout << endl << "KeyFrame Covisibility saved!" << endl;  
+}
+
+void System::SaveKeyFrameORBfeature(const string &filename) 
+{
+    cout << endl << "Saving KeyFrame ORBfeatures to " << filename << " ..." << endl;
+
+   vector<KeyFrame*> vpKFs = mpMap->GetAllKeyFrames();
+   sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
+
+   ofstream f;
+   f.open(filename.c_str());
+    f << fixed;
+
+    for(size_t i=0; i<vpKFs.size(); i++)
+    {
+        KeyFrame* pKF = vpKFs[i];
+
+        if(pKF->isBad())
+            continue;
+
+        f <<pKF->mnId<<endl;
+
+	for(int j=0; j<pKF->N; j++)
+	{
+	   cv::KeyPoint kp=pKF->mvKeys[j];
+
+	   f <<kp.pt.x<<" "<<kp.pt.y<<" "<<kp.size<<" "<<kp.angle<<" "<<kp.response<<" "<<kp.octave<<endl;
+	}
+    }
+
+   f.close();
+
+   cout << endl << "KeyFrame ORBfeatures saved!" << endl;  
+}
+
 
 int System::GetTrackingState()
 {

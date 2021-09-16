@@ -27,6 +27,7 @@
 
 #include <mutex>
 
+#include "Converter.h"
 
 
 namespace ORB_SLAM2
@@ -52,6 +53,9 @@ public:
     std::vector<MapPoint*> GetAllMapPoints();
     std::vector<MapPoint*> GetReferenceMapPoints();
 
+    std::set<MapPoint*> mspMapPoints;
+    std::set<KeyFrame*> mspKeyFrames;
+
     long unsigned int MapPointsInMap();
     long unsigned  KeyFramesInMap();
 
@@ -67,8 +71,9 @@ public:
     std::mutex mMutexPointCreation;
 
 protected:
-    std::set<MapPoint*> mspMapPoints;
-    std::set<KeyFrame*> mspKeyFrames;
+
+    std::map<MapPoint*, unsigned long int> mmpnMapPointsIdx;
+    void GetMapPointsIdx();
 
     std::vector<MapPoint*> mvpReferenceMapPoints;
 

@@ -26,6 +26,8 @@
 #include<thread>
 #include<opencv2/core/core.hpp>
 
+#include <unistd.h>
+
 #include "Tracking.h"
 #include "FrameDrawer.h"
 #include "MapDrawer.h"
@@ -113,7 +115,14 @@ public:
     void SaveTrajectoryKITTI(const string &filename);
 
     // TODO: Save/Load functions
-    // SaveMap(const string &filename);
+    //void SaveMap(const string &filename);
+    void SaveMapPointState(const string &filename) ;
+    void SaveKeyFrameState(const string &filename);  
+    void SaveMapPointtoKeyFrame(const string &filename);  
+    void SaveKeyFrametoMapPoint(const string &filename);
+    void SaveKeyFrameConnection(const string &filename);   
+    void SaveKeyFrameCovisibility(const string &filename);
+    void SaveKeyFrameORBfeature(const string &filename); 
     // LoadMap(const string &filename);
 
     // Information from most recent processed frame

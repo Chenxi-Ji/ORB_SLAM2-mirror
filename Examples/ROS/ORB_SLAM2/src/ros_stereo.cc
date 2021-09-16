@@ -121,9 +121,16 @@ int main(int argc, char **argv)
     SLAM.Shutdown();
 
     // Save camera trajectory
-    SLAM.SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory_TUM_Format.txt");
+    SLAM.SaveKeyFrameTrajectoryTUM("output/KeyFrameTrajectory_TUM_Format.txt");
     SLAM.SaveTrajectoryTUM("FrameTrajectory_TUM_Format.txt");
     SLAM.SaveTrajectoryKITTI("FrameTrajectory_KITTI_Format.txt");
+    SLAM.SaveMapPointState("output/MapPoints.txt");
+    SLAM.SaveKeyFrameState("output/KeyFrame.txt");
+    SLAM.SaveMapPointtoKeyFrame("output/MapPointtoKeyFrame.txt");
+    SLAM.SaveKeyFrametoMapPoint("output/KeyFrametoMapPoint.txt"); 
+    SLAM.SaveKeyFrameConnection("output/KeyFrameConnection.txt");
+    SLAM.SaveKeyFrameCovisibility("output/KeyFrameCovisibility.txt");
+    SLAM.SaveKeyFrameORBfeature("output/KeyFrameORBfeatures.txt"); 
 
     ros::shutdown();
 
